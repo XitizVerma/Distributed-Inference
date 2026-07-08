@@ -6,43 +6,93 @@ import streamlit as st
 
 from config import BACKEND_URL
 
-# Zepto-style brand treatment: a neutral dark canvas, with purple used sparingly
-# as an accent (CTAs, active states, metric numbers) rather than washed across
-# the whole page. Body text and backgrounds stay flat/neutral for contrast —
-# only the elements a user should notice first get the purple.
+# "Liquid glass" treatment: an animated purple/indigo gradient canvas with
+# frosted, translucent surfaces layered on top (backdrop-filter blur + saturate),
+# hairline light borders and soft shadows — the Apple-style glassmorphism look.
+# Purple stays the accent (CTAs, active states, metric numbers). The gradient
+# canvas is essential: the blur needs something colorful underneath to refract,
+# so surfaces read as frosted glass rather than flat panels.
 ACCENT_CSS = """
 <style>
+/* Animated mesh-gradient canvas so the frosted panels have colour to refract. */
 .stApp {
-    background-color: #0E0E12;
+    background:
+        radial-gradient(1100px 700px at 12% -8%, rgba(124, 58, 237, 0.28), transparent 60%),
+        radial-gradient(1000px 800px at 92% 8%, rgba(56, 189, 248, 0.16), transparent 55%),
+        radial-gradient(900px 900px at 78% 100%, rgba(168, 85, 247, 0.22), transparent 60%),
+        linear-gradient(160deg, #0B0B10 0%, #101019 50%, #0B0B12 100%);
+    background-attachment: fixed;
 }
+/* Frosted glass surface, reused across sidebar / forms / expanders / dataframes. */
 [data-testid="stSidebar"] {
-    background-color: #131318;
-    border-right: 1px solid #232330;
+    background: rgba(19, 19, 26, 0.55);
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
+[data-testid="stForm"],
+[data-testid="stExpander"] details,
+div[data-testid="stDataFrame"],
+[data-testid="stFileUploaderDropzone"] {
+    background: rgba(255, 255, 255, 0.04) !important;
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.10) !important;
+    border-radius: 18px !important;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+/* Metric cards get the glass treatment too. */
+[data-testid="stMetric"] {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(14px) saturate(150%);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 16px;
+    padding: 1rem 1.2rem;
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.30),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+/* Translucent, glossy CTA — a purple pill with a light top-edge highlight. */
 .stButton > button, .stFormSubmitButton > button, .stDownloadButton > button {
-    background-color: #7C3AED;
+    background: linear-gradient(180deg, rgba(139, 92, 246, 0.92), rgba(124, 58, 237, 0.92));
     color: #FFFFFF;
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 999px;
     font-weight: 700;
     padding: 0.5rem 1.5rem;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow:
+        0 6px 20px rgba(124, 58, 237, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
 }
 .stButton > button:hover, .stFormSubmitButton > button:hover, .stDownloadButton > button:hover {
-    background-color: #6D28D9;
+    background: linear-gradient(180deg, rgba(157, 92, 255, 0.98), rgba(109, 40, 217, 0.98));
     color: #FFFFFF;
+    transform: translateY(-1px);
+    box-shadow:
+        0 10px 28px rgba(124, 58, 237, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.30);
 }
-/* Sidebar task history reads as a plain list (ChatGPT-style), not a stack of
-   solid CTA buttons — purple stays reserved for the primary actions above.
+/* Sidebar task history reads as a plain frosted list (ChatGPT-style), not a
+   stack of solid CTA buttons — purple stays reserved for the primary actions.
    !important beats Streamlit's own flex-centering on the button internals. */
 [data-testid="stSidebar"] .stButton > button {
-    background-color: transparent;
+    background: transparent;
     color: #F5F5F7;
     border: 1px solid transparent;
-    border-radius: 8px;
+    border-radius: 10px;
     font-weight: 400;
     justify-content: flex-start !important;
     text-align: left !important;
     padding: 0.4rem 0.75rem;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 [data-testid="stSidebar"] .stButton > button div,
 [data-testid="stSidebar"] .stButton > button p,
@@ -51,22 +101,19 @@ ACCENT_CSS = """
     width: 100%;
 }
 [data-testid="stSidebar"] .stButton > button:hover {
-    background-color: #1F1F27;
+    background: rgba(255, 255, 255, 0.08);
     color: #FFFFFF;
-    border: 1px solid #232330;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    transform: none;
+    box-shadow: none;
 }
 h1 {
-    border-left: 4px solid #7C3AED;
+    border-left: 4px solid #9D5CFF;
     padding-left: 1.1rem;
     margin-left: 0.2rem;
 }
 [data-testid="stMetricValue"] {
-    color: #9D5CFF;
-}
-[data-testid="stForm"] {
-    background-color: #17171D;
-    border: 1px solid #232330;
-    border-radius: 16px;
+    color: #C4A6FF;
 }
 [data-testid="stTabs"] button[aria-selected="true"] {
     color: #9D5CFF;
@@ -124,6 +171,10 @@ STATUS_LABELS = {
     "task_requeued": "🟠 Task Requeued",
     "inference_accepted": "🔵 Inference Accepted",
     "inference_completed": "🟢 Inference Completed",
+    "model_command_created": "🟣 Model Command Created",
+    "model_command_completed": "🟢 Model Command Completed",
+    "sent": "🔵 Sent",
+    "succeeded": "🟢 Succeeded",
 }
 
 

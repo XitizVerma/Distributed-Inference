@@ -5,7 +5,7 @@ import time
 from fastapi import FastAPI, Request
 
 from db import Base, engine, SessionLocal
-from routes import workers, tasks, health, activity
+from routes import workers, tasks, health, activity, models
 from routes.workers import mark_stale_workers_offline
 from scheduler import reclaim_orphaned_tasks, assign_pending_tasks, prune_old_metrics
 from config import HEARTBEAT_TIMEOUT_SECONDS, METRICS_RETENTION_HOURS
@@ -20,6 +20,7 @@ app.include_router(health.router)
 app.include_router(workers.router)
 app.include_router(tasks.router)
 app.include_router(activity.router)
+app.include_router(models.router)
 
 
 @app.middleware("http")

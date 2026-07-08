@@ -41,6 +41,22 @@ class EventType(str, enum.Enum):
     inference_completed = "inference_completed"
     task_created = "task_created"
     task_requeued = "task_requeued"
+    model_command_created = "model_command_created"
+    model_command_completed = "model_command_completed"
+
+
+class ModelAction(str, enum.Enum):
+    install = "install"      # download/pull the model onto the node's disk
+    uninstall = "uninstall"  # remove it from disk
+    start = "start"          # preload into GPU/RAM so it's warm for inference
+    stop = "stop"            # evict from memory (stays installed on disk)
+
+
+class ModelCommandStatus(str, enum.Enum):
+    queued = "queued"        # created on Master, not yet handed to the node
+    sent = "sent"            # delivered to the node in a heartbeat response
+    succeeded = "succeeded"
+    failed = "failed"
 
 
 class Worker(Base):
@@ -100,6 +116,39 @@ class WorkerMetric(Base):
     memory_used_mb = Column(Integer)
     gpu_percent = Column(Float)  # null when the node has no way to report GPU load (e.g. Apple Silicon)
     gpu_memory_used_mb = Column(Integer)
+
+
+class Model(Base):
+    """Backend-agnostic catalog of models the operator manages from Master. A
+    model isn't tied to Ollama — `backend` selects which adapter runs its
+    commands on the node (ollama, huggingface, ...), so a text LLM and a
+    text-to-image diffusion model live in the same catalog."""
+    __tablename__ = "models"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)  # e.g. "llama3.1:8b", "stabilityai/stable-diffusion-2"
+    backend = Column(String(64), nullable=False)  # "ollama" | "huggingface" | ...
+    task_type = Column(String(64))  # informational: "text", "text-to-image", ...
+    params = Column(JSON)  # backend-specific hints (nullable)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class ModelCommand(Base):
+    """A single install/uninstall/start/stop instruction for one model on one
+    node. Delivered to the node by piggybacking on its heartbeat response (the
+    same pull-based channel tasks use), then finalized when the node reports
+    back — analogous to TaskWorkerMap."""
+    __tablename__ = "model_commands"
+
+    id = Column(Integer, primary_key=True)
+    model_id = Column(Integer, nullable=False)
+    worker_id = Column(Integer, nullable=False)
+    action = Column(Enum(ModelAction), nullable=False)
+    status = Column(Enum(ModelCommandStatus), default=ModelCommandStatus.queued)
+    error = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    sent_at = Column(DateTime)
+    completed_at = Column(DateTime)
 
 
 class ActivityLog(Base):

@@ -6,9 +6,12 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from db import get_db
-from models import Worker, WorkerStatus, Task, TaskStatus, TaskWorkerMap, ActivityLog, EventType, WorkerMetric
+from models import (
+    Worker, WorkerStatus, Task, TaskStatus, TaskWorkerMap, ActivityLog, EventType, WorkerMetric,
+    Model, ModelCommand, ModelCommandStatus,
+)
 from schemas import (
-    RegisterRequest, RegisterResponse, HeartbeatRequest, HeartbeatResponse, PendingTask,
+    RegisterRequest, RegisterResponse, HeartbeatRequest, HeartbeatResponse, PendingTask, PendingCommand,
 )
 
 router = APIRouter()
@@ -98,8 +101,31 @@ def heartbeat(req: HeartbeatRequest, db: Session = Depends(get_db)):
             task_id=task.id, prompt=task.prompt, model_name=task.model_name, input_url=task.input_url,
         )
 
+    # Model-management commands ride the same heartbeat channel as tasks, but are
+    # delivered independently — they don't flip the worker to busy, so managing
+    # models never blocks task scheduling.
+    pending_command = None
+    command = (
+        db.query(ModelCommand)
+        .filter(ModelCommand.worker_id == worker.id, ModelCommand.status == ModelCommandStatus.queued)
+        .order_by(ModelCommand.created_at.asc())
+        .first()
+    )
+    if command:
+        model = db.query(Model).filter(Model.id == command.model_id).first()
+        if model:
+            command.status = ModelCommandStatus.sent
+            command.sent_at = datetime.utcnow()
+            pending_command = PendingCommand(
+                command_id=command.id,
+                model_name=model.name,
+                backend=model.backend,
+                action=command.action.value,
+                params=model.params,
+            )
+
     db.commit()
-    return HeartbeatResponse(ack=True, pending_task=pending)
+    return HeartbeatResponse(ack=True, pending_task=pending, pending_command=pending_command)
 
 
 def _worker_dict(w: Worker) -> dict:
