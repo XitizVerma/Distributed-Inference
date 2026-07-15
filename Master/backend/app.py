@@ -3,12 +3,13 @@ import threading
 import time
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 
 from db import Base, engine, SessionLocal
 from routes import workers, tasks, health, activity, models
 from routes.workers import mark_stale_workers_offline
 from scheduler import reclaim_orphaned_tasks, assign_pending_tasks, prune_old_metrics
-from config import HEARTBEAT_TIMEOUT_SECONDS, METRICS_RETENTION_HOURS
+from config import HEARTBEAT_TIMEOUT_SECONDS, METRICS_RETENTION_HOURS, CORS_ALLOWED_ORIGINS
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("master")
@@ -16,6 +17,19 @@ logger = logging.getLogger("master")
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Master")
+
+# The Streamlit frontend calls this API server-side (Python `requests`), so it
+# never hit CORS. The React frontend (frontend2) calls it from the browser and
+# needs this — without it every fetch() fails with a CORS error before the
+# response body is even readable.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(health.router)
 app.include_router(workers.router)
 app.include_router(tasks.router)

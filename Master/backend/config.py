@@ -27,3 +27,14 @@ METRICS_RETENTION_HOURS = int(os.environ.get("METRICS_RETENTION_HOURS", "24"))
 STORAGE_BACKEND = os.environ.get("STORAGE_BACKEND", "google_drive")
 GOOGLE_SERVICE_ACCOUNT_FILE = os.environ.get("GOOGLE_SERVICE_ACCOUNT_FILE", "google_service_account.json")
 GOOGLE_DRIVE_FOLDER_ID = os.environ.get("GOOGLE_DRIVE_FOLDER_ID", "")
+
+# Browser-based frontends (frontend2) call this API directly from JS, so their
+# origin must be allow-listed for CORS. Comma-separated list of full origins
+# (scheme + host + port, no path). Defaults cover the Vite dev server.
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get(
+        "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+    ).split(",")
+    if origin.strip()
+]

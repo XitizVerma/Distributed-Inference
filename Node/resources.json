@@ -1,0 +1,127 @@
+{
+    "os": "macOS-26.5.1-arm64-arm-64bit-Mach-O",
+    "hostname": "Xitizs-MacBook-Air.local",
+    "cpu": {
+        "processor": "arm",
+        "architecture": "arm64",
+        "physical_cores": 8,
+        "logical_cores": 8,
+        "max_frequency_mhz": 3504
+    },
+    "ram": {
+        "total_bytes": 17179869184,
+        "available_bytes": 3222831104,
+        "used_bytes": 5737103360,
+        "total_gb": 16.0
+    },
+    "storage": {
+        "total_bytes": 245107195904,
+        "used_bytes": 128475242496,
+        "free_bytes": 116631953408,
+        "total_gb": 228.27
+    },
+    "gpu": [
+        {
+            "name": "Apple M2",
+            "type": "Integrated GPU",
+            "memory_total_mb": null
+        }
+    ],
+    "network": [
+        {
+            "interface": "lo0",
+            "is_up": true,
+            "speed_mbps": 0
+        },
+        {
+            "interface": "gif0",
+            "is_up": false,
+            "speed_mbps": 0
+        },
+        {
+            "interface": "stf0",
+            "is_up": false,
+            "speed_mbps": 0
+        },
+        {
+            "interface": "anpi0",
+            "is_up": true,
+            "speed_mbps": 0
+        },
+        {
+            "interface": "anpi1",
+            "is_up": true,
+            "speed_mbps": 0
+        },
+        {
+            "interface": "en3",
+            "is_up": true,
+            "speed_mbps": 0
+        },
+        {
+            "interface": "en4",
+            "is_up": true,
+            "speed_mbps": 0
+        },
+        {
+            "interface": "en1",
+            "is_up": true,
+            "speed_mbps": 0
+        },
+        {
+            "interface": "en2",
+            "is_up": true,
+            "speed_mbps": 0
+        },
+        {
+            "interface": "bridge0",
+            "is_up": true,
+            "speed_mbps": 0
+        },
+        {
+            "interface": "ap1",
+            "is_up": false,
+            "speed_mbps": 0
+        },
+        {
+            "interface": "en0",
+            "is_up": true,
+            "speed_mbps": 0
+        },
+        {
+            "interface": "awdl0",
+            "is_up": true,
+            "speed_mbps": 0
+        },
+        {
+            "interface": "llw0",
+            "is_up": true,
+            "speed_mbps": 0
+        },
+        {
+            "interface": "utun0",
+            "is_up": true,
+            "speed_mbps": 0
+        },
+        {
+            "interface": "utun1",
+            "is_up": true,
+            "speed_mbps": 0
+        },
+        {
+            "interface": "utun2",
+            "is_up": true,
+            "speed_mbps": 0
+        },
+        {
+            "interface": "utun3",
+            "is_up": true,
+            "speed_mbps": 0
+        },
+        {
+            "interface": "en5",
+            "is_up": true,
+            "speed_mbps": 0
+        }
+    ]
+}
